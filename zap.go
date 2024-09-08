@@ -98,12 +98,12 @@ func toZapField(f Field) zap.Field {
 func newZapLogger(config *log_config.LogConfig) (Logger, error) {
 	// 配置 zap 的编码器
 	encoderConfig := zapcore.EncoderConfig{
-		TimeKey:        "ts",                           // 时间字段的键名
-		LevelKey:       "level",                        // 日志级别字段的键名
-		NameKey:        "logger",                       // 日志记录器名称字段的键名
-		CallerKey:      "caller",                       // 调用者信息字段的键名
-		MessageKey:     "msg",                          // 日志消息字段的键名
-		StacktraceKey:  "stacktrace",                   // 堆栈跟踪字段的键名
+		TimeKey:        "TimeStamp",                    // 时间字段的键名
+		LevelKey:       "Level",                        // 日志级别字段的键名
+		NameKey:        "Logger",                       // 日志记录器名称字段的键名
+		CallerKey:      "Caller",                       // 调用者信息字段的键名
+		MessageKey:     "Msg",                          // 日志消息字段的键名
+		StacktraceKey:  "Stacktrace",                   // 堆栈跟踪字段的键名
 		LineEnding:     zapcore.DefaultLineEnding,      // 日志行的结束符
 		EncodeLevel:    zapcore.LowercaseLevelEncoder,  // 将日志级别转换为小写字符串
 		EncodeTime:     zapcore.EpochMillisTimeEncoder, // 毫秒级别时间戳

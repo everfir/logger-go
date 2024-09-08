@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"everfir/logger/structs/field"
 	"everfir/logger/structs/log_config"
@@ -82,21 +83,56 @@ func initWithConfig(config *log_config.LogConfig) (err error) {
 
 // 提供全局日志函数
 func Debug(ctx context.Context, msg string, fields ...field.Field) {
-	globalLogger.Debug(msg, fields...)
+	contextFields := fixFields(ctx)
+	globalLogger.Debug(msg, append(contextFields, fields...)...)
 }
 
 func Info(ctx context.Context, msg string, fields ...field.Field) {
-	globalLogger.Info(msg, fields...)
+	contextFields := fixFields(ctx)
+	globalLogger.Info(msg, append(contextFields, fields...)...)
 }
 
 func Warn(ctx context.Context, msg string, fields ...field.Field) {
-	globalLogger.Warn(msg, fields...)
+	contextFields := fixFields(ctx)
+	globalLogger.Warn(msg, append(contextFields, fields...)...)
 }
 
 func Error(ctx context.Context, msg string, fields ...field.Field) {
-	globalLogger.Error(msg, fields...)
+	contextFields := fixFields(ctx)
+	globalLogger.Error(msg, append(contextFields, fields...)...)
 }
 
 func Fatal(ctx context.Context, msg string, fields ...field.Field) {
-	globalLogger.Fatal(msg, fields...)
+	contextFields := fixFields(ctx)
+	globalLogger.Fatal(msg, append(contextFields, fields...)...)
+}
+
+func fixFields(ctx context.Context) (fields []field.Field) {
+	fields = append(fields, field.String("Time", time.Now().String()))
+
+	return append(fields, extractContextFields(ctx)...)
+}
+
+// extractContextFields 从 context 中提取信息并创建字段
+func extractContextFields(ctx context.Context) (fields []field.Field) {
+
+	var keyMapping = map[string]string{
+		"efr_trace_id":       "TraceID",
+		"efr_span_id":        "SpanID",
+		"efr_parent_span_id": "ParentSpanID",
+		"efr_host_name":      "Host",
+		"efr_pod_name":       "PodName",
+		"efr_ip":             "IP",
+		"efr_client_ip":      "CIP",
+	}
+
+	var val string
+	var ok bool
+	for k1, k2 := range keyMapping {
+		if val, ok = ctx.Value(k1).(string); ok {
+			fields = append(fields, field.String(k2, val))
+		}
+	}
+
+	return fields
 }

@@ -12,6 +12,15 @@ import (
 func main() {
 
 	ctx := context.TODO()
+	ctx = context.WithValue(ctx, "efr_trace_id", "xxxx_trace_id")
+	ctx = context.WithValue(ctx, "efr_span_id", "xxxx_span_id")
+	ctx = context.WithValue(ctx, "efr_parent_span_id", "xxxx_parent_span_id")
+
+	ctx = context.WithValue(ctx, "efr_host_name", "train2")
+	ctx = context.WithValue(ctx, "efr_pod_name", "train2_pod_1")
+	ctx = context.WithValue(ctx, "efr_ip", "127.0.0.1")
+	ctx = context.WithValue(ctx, "efr_client_ip", "8.8.8.8")
+
 	if err := Init(); err != nil {
 		logger.Fatal(ctx, "初始化日志器失败",
 			field.String("error", err.Error()),
