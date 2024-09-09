@@ -1,4 +1,4 @@
-module everfir/logger
+module github.com/everfir/logger
 
 go 1.22.0
 
