@@ -1,7 +1,7 @@
 package log_config
 
 import (
-	"everfir/logger/structs/log_level"
+	"github.com/everfir/logger-go/structs/log_level"
 )
 
 // LogConfig 定义日志配置结构

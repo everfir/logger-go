@@ -6,9 +6,9 @@ import (
 	"path"
 	"time"
 
-	. "everfir/logger/structs/field"
-	"everfir/logger/structs/log_config"
-	"everfir/logger/structs/log_level"
+	. "github.com/everfir/logger-go/structs/field"
+	"github.com/everfir/logger-go/structs/log_config"
+	"github.com/everfir/logger-go/structs/log_level"
 
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"go.uber.org/zap"

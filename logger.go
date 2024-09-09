@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"everfir/logger/structs/field"
-	"everfir/logger/structs/log_config"
+	"github.com/everfir/logger-go/structs/field"
+	"github.com/everfir/logger-go/structs/log_config"
 )
 
 // Logger 定义日志接口

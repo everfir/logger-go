@@ -1,4 +1,4 @@
-module github.com/everfir/logger
+module github.com/everfir/logger-go
 
 go 1.22.0
 
@@ -11,5 +11,7 @@ require (
 	github.com/jonboulle/clockwork v0.4.0 // indirect
 	github.com/lestrrat-go/strftime v1.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	go.uber.org/multierr v1.10.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
 )
+
+// replace github.com/everfir/logger-go => ./

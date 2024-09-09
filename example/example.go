@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"everfir/logger"
-	"everfir/logger/structs/field"
-	"everfir/logger/structs/log_level"
+	"github.com/everfir/logger-go"
+	"github.com/everfir/logger-go/structs/field"
+	"github.com/everfir/logger-go/structs/log_level"
 )
 
 func main() {

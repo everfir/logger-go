@@ -1,8 +1,8 @@
 package logger
 
 import (
-	"everfir/logger/structs/log_config"
-	"everfir/logger/structs/log_level"
+	"github.com/everfir/logger-go/structs/log_config"
+	"github.com/everfir/logger-go/structs/log_level"
 )
 
 // Option 定义配置选项函数类型
