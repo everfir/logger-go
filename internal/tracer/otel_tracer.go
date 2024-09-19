@@ -127,13 +127,11 @@ func (tcer *OtelTracer) Trace(
 	}
 
 	var attrs []attribute.KeyValue
-	attrs = append(attrs, attribute.String("msg", msg))
-
 	for _, f := range fields {
 		attrs = append(attrs, toOtelField(f))
 	}
 
-	span.AddEvent("log", trace.WithAttributes(attrs...))
+	span.AddEvent(msg, trace.WithAttributes(attrs...))
 }
 
 func toOtelField(f field.Field) attribute.KeyValue {
