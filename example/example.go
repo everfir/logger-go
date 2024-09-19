@@ -25,7 +25,6 @@ func main() {
 	}
 	defer func() {
 		logger.Close()
-		time.Sleep(time.Second * 10)
 	}()
 
 	// 创建一个根 span
