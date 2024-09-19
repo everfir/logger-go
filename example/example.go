@@ -2,75 +2,67 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/everfir/logger-go"
 	"github.com/everfir/logger-go/structs/field"
 	"github.com/everfir/logger-go/structs/log_level"
+	"go.opentelemetry.io/otel"
 )
 
 func main() {
 
-	ctx := context.TODO()
-	ctx = context.WithValue(ctx, "efr_trace_id", "xxxx_trace_id")
-	ctx = context.WithValue(ctx, "efr_span_id", "xxxx_span_id")
-	ctx = context.WithValue(ctx, "efr_parent_span_id", "xxxx_parent_span_id")
+	//--------------------脚手架负责的工作----------------------------------
+	// 初始化日志库
+	err := logger.Init(
+		logger.WithLevel(log_level.DebugLevel),
+		logger.WithOutputFiles("app.log", "stdout"),
+		logger.WithTracing(true, "localhost:4318"), // 启用 tracing 并设置 Collector 地址
+	)
+	if err != nil {
+		panic(fmt.Sprintf("初始化日志库失败: %v", err))
+	}
+	defer func() {
+		logger.Close()
+		time.Sleep(time.Second * 10)
+	}()
 
-	ctx = context.WithValue(ctx, "efr_host_name", "train2")
-	ctx = context.WithValue(ctx, "efr_pod_name", "train2_pod_1")
-	ctx = context.WithValue(ctx, "efr_ip", "127.0.0.1")
-	ctx = context.WithValue(ctx, "efr_client_ip", "8.8.8.8")
+	// 创建一个根 span
+	ctx, rootSpan := otel.Tracer("example").Start(context.Background(), "main")
+	defer rootSpan.End()
+	//--------------------脚手架负责的工作----------------------------------
 
-	if err := Init(); err != nil {
-		logger.Fatal(ctx, "初始化日志器失败",
-			field.String("error", err.Error()),
-		)
+	// 使用包含 span 的 context 进行日志记录
+	logger.Info(ctx, "应用程序启动", field.String("version", "v1.0.0"))
+
+	// 模拟一些操作
+	for i := 0; i < 3; i++ {
+		func() {
+			//--------------------脚手架负责的工作----------------------------------
+			ctx, span := otel.Tracer("example").Start(ctx, fmt.Sprintf("operation-%d", i))
+			defer span.End()
+			//--------------------脚手架负责的工作----------------------------------
+
+			logger.Info(ctx, "执行操作", field.Int("iteration", i))
+
+			// 模拟一些工作
+			time.Sleep(100 * time.Millisecond)
+
+			logger.Warn(ctx, "可能的问题", field.String("detail", "某些操作可能不稳定"))
+		}()
 	}
 
-	// 测试不同级别的日志和所有类型的字段
-	logger.Debug(ctx, "这是一条调试消息",
-		field.String("string_field", "debug_value"),
-		field.Bool("bool_field", true),
-		field.Int("int_field", 42),
-		field.Int8("int8_field", 8),
-		field.Int16("int16_field", 16),
-		field.Int32("int32_field", 32),
-		field.Int64("int64_field", 64),
-	)
-
-	logger.Info(ctx, "这是一条信息消息",
-		field.Uint("uint_field", 42),
-		field.Uint8("uint8_field", 8),
-		field.Uint16("uint16_field", 16),
-		field.Uint32("uint32_field", 32),
-		field.Uint64("uint64_field", 64),
-		field.Float32("float32_field", 3.14),
-		field.Float64("float64_field", 3.14159),
-	)
-
-	logger.Warn(ctx, "这是一条警告消息",
-		field.Time("time_field", time.Now()),
-		field.Duration("duration_field", 5*time.Second),
-		field.Any("any_field", struct{ Name string }{"测试结构体"}),
-	)
-
-	logger.Error(ctx, "这是一条错误消息",
-		field.String("error_type", "测试错误"),
+	// 模拟一个错误
+	//--------------------脚手架负责的工作----------------------------------
+	ctx, errorSpan := otel.Tracer("example").Start(ctx, "error-operation")
+	logger.Error(ctx, "发生错误",
+		field.String("error_type", "模拟错误"),
 		field.Int("error_code", 500),
 	)
+	errorSpan.End()
+	//--------------------脚手架负责的工作----------------------------------
 
-}
+	logger.Info(ctx, "应用程序结束")
 
-func Init() (err error) {
-	// 初始化日志器,使用多个选项
-	err = logger.Init(
-		logger.WithLevel(log_level.DebugLevel),
-		logger.WithStackTrace(log_level.ErrorLevel),
-		logger.WithCompress(true),
-		logger.WithMaxBackups(5),
-		logger.WithRotationTime(60),
-		logger.WithOutputFiles("test.log", "stdout"),
-		logger.WithErrorFiles("error.log"),
-	)
-	return
 }

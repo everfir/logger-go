@@ -94,26 +94,25 @@ func toZapField(f Field) zap.Field {
 	}
 }
 
-// newZapLogger 创建一个新的 zapLogger 实例
-func newZapLogger(config *log_config.LogConfig) (Logger, error) {
-	// 配置 zap 的编码器
+// NewZapLogger 创建一个新的 zapLogger 实例
+func NewZapLogger(config *log_config.LogConfig) (Logger, error) {
 	encoderConfig := zapcore.EncoderConfig{
-		TimeKey:        "TimeStamp",                    // 时间字段的键名
-		LevelKey:       "Level",                        // 日志级别字段的键名
-		NameKey:        "Logger",                       // 日志记录器名称字段的键名
-		CallerKey:      "Caller",                       // 调用者信息字段的键名
-		MessageKey:     "Msg",                          // 日志消息字段的键名
-		StacktraceKey:  "Stacktrace",                   // 堆栈跟踪字段的键名
-		LineEnding:     zapcore.DefaultLineEnding,      // 日志行的结束符
-		EncodeLevel:    zapcore.LowercaseLevelEncoder,  // 将日志级别转换为小写字符串
-		EncodeTime:     zapcore.EpochMillisTimeEncoder, // 毫秒级别时间戳
-		EncodeDuration: zapcore.SecondsDurationEncoder, // 将持续时间编码为秒数
-		EncodeCaller:   zapcore.ShortCallerEncoder,     // 以短格式编码调用者信息（包/文件:行）
+		TimeKey:        "timestamp",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		FunctionKey:    zapcore.OmitKey,
+		MessageKey:     "msg",
+		StacktraceKey:  "stacktrace",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    otelSeverityEncoder,
+		EncodeTime:     zapcore.RFC3339NanoTimeEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
 	var cores []zapcore.Core
 
-	// 为每个输出路径创建一个 core
 	for _, filename := range config.OutputFiles {
 		var w zapcore.WriteSyncer
 		if filename == "stdout" || filename == "stderr" {
@@ -135,13 +134,10 @@ func newZapLogger(config *log_config.LogConfig) (Logger, error) {
 		cores = append(cores, core)
 	}
 
-	// 合并所有的 cores
 	combinedCore := zapcore.NewTee(cores...)
 
-	// 构建 zap logger 的选项
 	options := buildOptions(config)
 	logger := zap.New(combinedCore, options...)
-
 	return &zapLogger{logger: logger}, nil
 }
 
@@ -152,9 +148,10 @@ func getRotateLogger(filename string, config *log_config.LogConfig) (logger io.W
 		return nil, err
 	}
 
-	filename = path.Join(dir+"/log", filename+".%Y%m%d%H%M")
+	filename = path.Join(dir+"/log", filename)
+	suffix := ".%Y%m%d%H%M"
 	logger, err = rotatelogs.New(
-		filename,
+		filename+suffix,
 		rotatelogs.WithLinkName(filename),
 		// rotatelogs.WithMaxAge(time.Duration(config.MaxAge)*24*time.Hour),
 		rotatelogs.WithRotationTime(time.Duration(config.RotationTime)*time.Minute),
@@ -199,5 +196,24 @@ func standardWriter(path string) io.Writer {
 		return os.Stderr
 	default:
 		return nil
+	}
+}
+
+func otelSeverityEncoder(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
+	switch l {
+	case zapcore.DebugLevel:
+		enc.AppendString("DEBUG")
+	case zapcore.InfoLevel:
+		enc.AppendString("INFO")
+	case zapcore.WarnLevel:
+		enc.AppendString("WARN")
+	case zapcore.ErrorLevel:
+		enc.AppendString("ERROR")
+	case zapcore.DPanicLevel:
+		enc.AppendString("FATAL")
+	case zapcore.PanicLevel:
+		enc.AppendString("FATAL")
+	case zapcore.FatalLevel:
+		enc.AppendString("FATAL")
 	}
 }

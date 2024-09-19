@@ -2,6 +2,7 @@ package log_config
 
 import (
 	"github.com/everfir/logger-go/structs/log_level"
+	"github.com/everfir/logger-go/structs/tracer_config"
 )
 
 // LogConfig 定义日志配置结构
@@ -16,12 +17,16 @@ type LogConfig struct {
 	// 目录为当前工作目录
 	OutputFiles []string // 日志输出文件名：日志文件的保存位置，可以是文件路径或 "stdout"/"stderr"
 	ErrorFiles  []string // 错误日志文件名：错误级别日志的额外输出位置
+
+	// 链路追踪
+	TracerConfig *tracer_config.TracerConfig
 }
 
 // 默认配置
 var DefaultConfig = LogConfig{
-	Level:       log_level.InfoLevel,
-	StackTrace:  log_level.FatalLevel,
-	OutputFiles: []string{"stdout"},
-	ErrorFiles:  []string{"stderr"},
+	Level:        log_level.InfoLevel,
+	StackTrace:   log_level.FatalLevel,
+	OutputFiles:  []string{"stdout"},
+	ErrorFiles:   []string{"stderr"},
+	TracerConfig: &tracer_config.DefaultTracerConfig,
 }

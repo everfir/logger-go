@@ -3,6 +3,7 @@ package logger
 import (
 	"github.com/everfir/logger-go/structs/log_config"
 	"github.com/everfir/logger-go/structs/log_level"
+	"github.com/everfir/logger-go/structs/tracer_config"
 )
 
 // Option 定义配置选项函数类型
@@ -54,5 +55,17 @@ func WithOutputFiles(outputFiles ...string) Option {
 func WithErrorFiles(errorFiles ...string) Option {
 	return func(c *log_config.LogConfig) {
 		c.ErrorFiles = errorFiles
+	}
+}
+
+// WithTracing 开启Tracing功能并设置OTEL Collector Endpoint
+func WithTracing(enable bool, endpoint string) Option {
+	return func(c *log_config.LogConfig) {
+		if c.TracerConfig == nil {
+			c.TracerConfig = &tracer_config.TracerConfig{}
+		}
+
+		c.TracerConfig.Enable = enable
+		c.TracerConfig.CollectorEndpoint = endpoint
 	}
 }
