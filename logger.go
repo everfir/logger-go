@@ -101,25 +101,25 @@ func Debug(ctx context.Context, msg string, fields ...field.Field) {
 func Info(ctx context.Context, msg string, fields ...field.Field) {
 	fields = append(fields, fixFields(ctx)...)
 	globalLogger.Tracer.Trace(ctx, log_level.InfoLevel, msg, fields...)
-	globalLogger.Logger.Debug(msg, fields...)
+	globalLogger.Logger.Info(msg, fields...)
 }
 
 func Warn(ctx context.Context, msg string, fields ...field.Field) {
 	fields = append(fields, fixFields(ctx)...)
 	globalLogger.Tracer.Trace(ctx, log_level.InfoLevel, msg, fields...)
-	globalLogger.Logger.Debug(msg, fields...)
+	globalLogger.Logger.Warn(msg, fields...)
 }
 
 func Error(ctx context.Context, msg string, fields ...field.Field) {
 	fields = append(fields, fixFields(ctx)...)
 	globalLogger.Tracer.Trace(ctx, log_level.ErrorLevel, msg, fields...)
-	globalLogger.Logger.Debug(msg, fields...)
+	globalLogger.Logger.Error(msg, fields...)
 }
 
 func Fatal(ctx context.Context, msg string, fields ...field.Field) {
 	fields = append(fields, fixFields(ctx)...)
 	globalLogger.Tracer.Trace(ctx, log_level.FatalLevel, msg, fields...)
-	globalLogger.Logger.Debug(msg, fields...)
+	globalLogger.Logger.Fatal(msg, fields...)
 }
 
 // TODO: 待根据环境方案更新
