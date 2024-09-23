@@ -1,9 +1,11 @@
 package tracer_config
 
+import "os"
+
 var DefaultTracerConfig = TracerConfig{
 	Enable:            true,
 	Compression:       No,
-	CollectorEndpoint: "localhost:4318",
+	CollectorEndpoint: os.Getenv("OTEL_COLLECTOR_DNS"),
 }
 
 type TracerConfig struct {
@@ -11,6 +13,16 @@ type TracerConfig struct {
 
 	Compression       Compression
 	CollectorEndpoint string // CollectorEndpoint
+}
+
+func (config *TracerConfig) FixDefault() {
+	if config == nil {
+		return
+	}
+
+	if config.CollectorEndpoint == "" {
+		config.CollectorEndpoint = "otelcollector-service.everfir.svc.cluster.local"
+	}
 }
 
 func (config *TracerConfig) EnableTracing() bool {

@@ -42,6 +42,7 @@ func Init(options ...Option) error {
 	for _, option := range options {
 		option(&config)
 	}
+	config.TracerConfig.FixDefault()
 
 	return initWithConfig(&config)
 }

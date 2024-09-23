@@ -30,3 +30,7 @@ var DefaultConfig = LogConfig{
 	ErrorFiles:   []string{"stderr"},
 	TracerConfig: &tracer_config.DefaultTracerConfig,
 }
+
+func (config *LogConfig) FixDefault() {
+	config.TracerConfig.FixDefault()
+}
