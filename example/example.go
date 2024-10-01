@@ -10,6 +10,7 @@ import (
 	"github.com/everfir/logger-go"
 	"github.com/everfir/logger-go/structs/field"
 	"github.com/everfir/logger-go/structs/log_level"
+	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
@@ -27,24 +28,24 @@ func init() {
 	propagator = otel.GetTextMapPropagator()
 }
 
+// tracingMiddleware 注入 tracing 信息到 gin.Context
+func tracingMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := propagator.Extract(c.Request.Context(), propagation.HeaderCarrier(c.Request.Header))
+		ctx, span := tracer.Start(ctx, "tracingMiddleware")
+		defer span.End()
+		c.Set("tracing", span)
+
+		c.Next()
+	}
+}
+
 // 服务器处理函数
-func serverHandler(w http.ResponseWriter, r *http.Request) {
-	// 从请求中提取 context
-	ctx := propagator.Extract(r.Context(), propagation.HeaderCarrier(r.Header))
-	r = r.WithContext(ctx)
-	ctx = r.Context()
-
-	logger.Info(ctx, "服务器接收到的 header", field.String("headers", fmt.Sprintf("%v", r.Header)))
-	logger.Info(ctx, "服务器接收到的 traceparent", field.String("traceparent", r.Header.Get("Traceparent")))
-	logger.Info(ctx, "服务器的ctx", field.Any("ctx", ctx))
-
-	// 创建新的 span
-	_, span := tracer.Start(ctx, "server-handler")
-	defer span.End()
+func serverHandler(c *gin.Context) {
+	logger.Info(c, "服务端测试")
 
 	// 响应客户端
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Hello from server!"))
+	c.String(http.StatusOK, "Hello from server!")
 }
 
 // 客户端发送请求函数
@@ -101,11 +102,19 @@ func main() {
 	ctx, rootSpan := tracer.Start(context.Background(), "main")
 	defer rootSpan.End()
 
+	// 创建 Gin 引擎
+	r := gin.Default()
+
+	// 使用 tracing 中间件
+	r.Use(tracingMiddleware())
+
+	// 注册路由
+	r.GET("/", serverHandler)
+
 	// 启动 HTTP 服务器
-	http.HandleFunc("/", serverHandler)
 	go func() {
-		logger.Info(ctx, "启动 HTTP 服务器在 :8080")
-		if err := http.ListenAndServe(":10083", nil); err != nil {
+		logger.Info(ctx, "启动 HTTP 服务器在 :10083")
+		if err := r.Run(":10083"); err != nil {
 			logger.Error(ctx, "HTTP 服务器错误", field.String("err", err.Error()))
 		}
 	}()

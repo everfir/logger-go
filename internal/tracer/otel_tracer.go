@@ -95,9 +95,13 @@ func (tcer *OtelTracer) Close() (err error) {
 }
 
 func (tcer *OtelTracer) FixFields(ctx context.Context, fields ...field.Field) []field.Field {
-	// tracing message
-	span := trace.SpanFromContext(ctx)
-	if !span.SpanContext().IsValid() {
+
+	var ok bool
+	var span trace.Span
+	if span, ok = ctx.Value("tracing").(trace.Span); !ok {
+		return fields
+	}
+	if span == nil || span.SpanContext().IsValid() == false {
 		return fields
 	}
 
