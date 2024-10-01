@@ -21,7 +21,7 @@ func (config *TracerConfig) FixDefault() {
 	}
 
 	if config.CollectorEndpoint == "" {
-		config.CollectorEndpoint = "otelcollector-service.everfir.svc.cluster.local"
+		config.CollectorEndpoint = "otelcollector-service.everfir.svc.cluster.local:4317"
 	}
 }
 
