@@ -189,3 +189,7 @@ func (tcer *OtelTracer) Extract(ctx context.Context, carrier propagation.TextMap
 func (tcer *OtelTracer) Inject(ctx context.Context, carrier propagation.TextMapCarrier) {
 	tcer.propagator.Inject(ctx, carrier)
 }
+
+func (tcer *OtelTracer) Start(ctx context.Context, name string) (context.Context, trace.Span) {
+	return tcer.provider.Tracer(name).Start(ctx, name)
+}

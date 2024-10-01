@@ -11,6 +11,7 @@ import (
 	"github.com/everfir/logger-go/structs/log_config"
 	"github.com/everfir/logger-go/structs/log_level"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -161,4 +162,12 @@ func Inject(ctx context.Context, carrier propagation.TextMapCarrier) {
 		return
 	}
 	globalLogger.Tracer.Inject(ctx, carrier)
+}
+
+// Start 开始一个span
+func Start(ctx context.Context, name string) (context.Context, trace.Span) {
+	if globalLogger.Tracer == nil {
+		return ctx, nil
+	}
+	return globalLogger.Tracer.Start(ctx, name)
 }
