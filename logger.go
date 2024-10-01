@@ -10,6 +10,7 @@ import (
 	"github.com/everfir/logger-go/structs/field"
 	"github.com/everfir/logger-go/structs/log_config"
 	"github.com/everfir/logger-go/structs/log_level"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 var (
@@ -142,4 +143,22 @@ func fixFields(ctx context.Context) (fields []field.Field) {
 		fields = globalLogger.Tracer.FixFields(ctx, fields...)
 	}
 	return fields
+}
+
+// ----------------------这部分功能，严格来说不算是logger的功能---------------------------------
+
+// Extract 从上下文中提取trace信息
+func Extract(ctx context.Context, carrier propagation.TextMapCarrier) context.Context {
+	if globalLogger.Tracer == nil {
+		return ctx
+	}
+	return globalLogger.Tracer.Extract(ctx, carrier)
+}
+
+// Inject 将trace信息注入到上下文中
+func Inject(ctx context.Context, carrier propagation.TextMapCarrier) {
+	if globalLogger.Tracer == nil {
+		return
+	}
+	globalLogger.Tracer.Inject(ctx, carrier)
 }

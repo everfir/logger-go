@@ -28,9 +28,10 @@ func NewOtelTracer(config *tracer_config.TracerConfig) *OtelTracer {
 }
 
 type OtelTracer struct {
-	doneChan chan struct{}
-	config   *tracer_config.TracerConfig
-	provider *trace_sdk.TracerProvider
+	doneChan   chan struct{}
+	config     *tracer_config.TracerConfig
+	provider   *trace_sdk.TracerProvider
+	propagator propagation.TextMapPropagator
 }
 
 func (tcer *OtelTracer) Init() (err error) {
@@ -69,9 +70,11 @@ func (tcer *OtelTracer) Init() (err error) {
 	)
 
 	// 设置全局的provider，通过GetTracerProvider获取tracer，来开启一个流程
+	propagator := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
 	otel.SetTracerProvider(tp)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	otel.SetTextMapPropagator(propagator)
 	tcer.provider = tp
+	tcer.propagator = otel.GetTextMapPropagator()
 	return
 }
 
@@ -177,4 +180,12 @@ func toOtelField(f field.Field) attribute.KeyValue {
 	default:
 		return attribute.String(f.Key(), fmt.Sprintf("%v", f.Value()))
 	}
+}
+
+func (tcer *OtelTracer) Extract(ctx context.Context, carrier propagation.TextMapCarrier) context.Context {
+	return tcer.propagator.Extract(ctx, carrier)
+}
+
+func (tcer *OtelTracer) Inject(ctx context.Context, carrier propagation.TextMapCarrier) {
+	tcer.propagator.Inject(ctx, carrier)
 }

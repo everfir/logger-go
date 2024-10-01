@@ -17,22 +17,20 @@ import (
 )
 
 // 定义全局变量
-var tracer trace.Tracer
+var tcer trace.Tracer
 var propagator propagation.TextMapPropagator
 
 // 初始化函数
 func init() {
 	// 初始化 tracer
-	tracer = otel.Tracer("example")
-	// 初始化 propagator
-	propagator = otel.GetTextMapPropagator()
+	tcer = otel.Tracer("example")
 }
 
 // tracingMiddleware 注入 tracing 信息到 gin.Context
 func tracingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := propagator.Extract(c.Request.Context(), propagation.HeaderCarrier(c.Request.Header))
-		ctx, span := tracer.Start(ctx, "tracingMiddleware")
+		ctx := logger.Extract(c.Request.Context(), propagation.HeaderCarrier(c.Request.Header))
+		ctx, span := tcer.Start(ctx, "tracingMiddleware")
 		defer span.End()
 		c.Set("tracing", span)
 
@@ -51,7 +49,7 @@ func serverHandler(c *gin.Context) {
 // 客户端发送请求函数
 func sendRequest(ctx context.Context) error {
 	// 创建新的 span
-	ctx, span := tracer.Start(ctx, "client-request")
+	ctx, span := tcer.Start(ctx, "client-request")
 	defer span.End()
 
 	// 创建 HTTP 请求
@@ -61,7 +59,7 @@ func sendRequest(ctx context.Context) error {
 	}
 
 	// 注入 trace 信息到 header
-	propagator.Inject(ctx, propagation.HeaderCarrier(req.Header))
+	logger.Inject(ctx, propagation.HeaderCarrier(req.Header))
 	req.Header.Set("Traceparent", "00-c1156a8801e4e6e9dd87c18071037df4-4ef6c87f0b8dc73f-01")
 
 	// 记录发送的 header
@@ -99,7 +97,7 @@ func main() {
 	defer logger.Close()
 
 	// 创建一个根 span
-	ctx, rootSpan := tracer.Start(context.Background(), "main")
+	ctx, rootSpan := tcer.Start(context.Background(), "main")
 	defer rootSpan.End()
 
 	// 创建 Gin 引擎
