@@ -11,6 +11,7 @@ import (
 type LogConfig struct {
 	// 基础信息
 	ServiceName string // 服务名称
+	PodIP       string // 容器IP
 
 	Level      log_level.Level // 日志级别：定义记录哪个级别及以上的日志
 	StackTrace log_level.Level // 堆栈跟踪级别：定义在哪个级别及以上的日志中包含堆栈跟踪
@@ -30,7 +31,9 @@ type LogConfig struct {
 
 // 默认配置
 var DefaultConfig = LogConfig{
-	ServiceName:  os.Getenv("ServiceName"),
+	PodIP:       os.Getenv("PodIP"),
+	ServiceName: os.Getenv("ServiceName"),
+
 	Level:        log_level.InfoLevel,
 	StackTrace:   log_level.FatalLevel,
 	OutputFiles:  []string{"stdout"},

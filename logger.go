@@ -25,18 +25,14 @@ type myLogger struct {
 	logger.Logger
 	tracer.Tracer
 
-	// env
-	popIp   string
-	podName string
-	config  *log_config.LogConfig
+	config *log_config.LogConfig
 }
 
 var (
 	globalLogger = myLogger{
-		Logger:  &logger.ConsoleLogger{},
-		Tracer:  nil,
-		popIp:   os.Getenv("PodIP"),
-		podName: os.Getenv("PodName"),
+		Logger: &logger.ConsoleLogger{},
+		Tracer: nil,
+		config: &log_config.DefaultConfig,
 	}
 )
 
@@ -138,9 +134,7 @@ func Fatal(ctx context.Context, msg string, fields ...field.Field) {
 // TODO: 待根据环境方案更新
 func fixFields(ctx context.Context) (fields []field.Field) {
 	// 添加容器IP
-	fields = append(fields, field.String("container.ip", globalLogger.popIp))
-	// 添加容器名
-	fields = append(fields, field.String("container.name", globalLogger.podName))
+	fields = append(fields, field.String("container.ip", globalLogger.config.PodIP))
 	// 添加服务名
 	fields = append(fields, field.String("service.name", globalLogger.config.ServiceName))
 
