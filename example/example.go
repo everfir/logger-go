@@ -9,7 +9,6 @@ import (
 
 	"github.com/everfir/logger-go"
 	"github.com/everfir/logger-go/structs/field"
-	"github.com/everfir/logger-go/structs/log_level"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -87,15 +86,15 @@ func sendRequest(ctx context.Context) error {
 
 func main() {
 	// 初始化日志库
-	err := logger.Init(
-		logger.WithLevel(log_level.DebugLevel),
-		// logger.WithOutputFiles("app.log", "stdout"),
-		// logger.WithTracing(true, "localhost:4318"),
-	)
-	if err != nil {
-		panic(fmt.Sprintf("初始化日志库失败: %v", err))
-	}
-	defer logger.Close()
+	// var err error
+	// err = logger.Init(
+	// 	logger.WithLevel(log_level.DebugLevel),
+	// 	logger.WithServiceName("logger-example"),
+	// )
+	// if err != nil {
+	// 	panic(fmt.Sprintf("初始化日志库失败: %v", err))
+	// }
+	// defer logger.Close()
 
 	// 创建一个根 span
 	ctx, rootSpan := tcer.Start(context.Background(), "main")

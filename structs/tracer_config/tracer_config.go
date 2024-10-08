@@ -1,16 +1,23 @@
 package tracer_config
 
-import "os"
+import (
+	"os"
+
+	"github.com/everfir/logger-go/structs/log_level"
+)
 
 var DefaultTracerConfig = TracerConfig{
 	Enable:            true,
 	Compression:       No,
+	ServiceName:       os.Getenv("SERVICE_NAME"),
 	CollectorEndpoint: os.Getenv("OTEL_COLLECTOR_DNS"),
 }
 
 type TracerConfig struct {
 	Enable bool // 开启Tracing功能
 
+	ServiceName       string
+	Level             log_level.Level
 	Compression       Compression
 	CollectorEndpoint string // CollectorEndpoint
 }

@@ -20,8 +20,9 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func NewOtelTracer(config *tracer_config.TracerConfig) *OtelTracer {
+func NewOtelTracer(config *tracer_config.TracerConfig, level log_level.Level) *OtelTracer {
 	return &OtelTracer{
+		level:    level,
 		doneChan: make(chan struct{}),
 		config:   config,
 	}
@@ -29,6 +30,7 @@ func NewOtelTracer(config *tracer_config.TracerConfig) *OtelTracer {
 
 type OtelTracer struct {
 	doneChan   chan struct{}
+	level      log_level.Level
 	config     *tracer_config.TracerConfig
 	provider   *trace_sdk.TracerProvider
 	propagator propagation.TextMapPropagator
@@ -64,7 +66,7 @@ func (tcer *OtelTracer) Init() (err error) {
 		trace_sdk.WithResource(
 			resource.NewWithAttributes(
 				semconv.SchemaURL,
-				semconv.ServiceNameKey.String("traccer"),
+				semconv.ServiceNameKey.String(tcer.config.ServiceName),
 			),
 		),
 	)
@@ -123,6 +125,9 @@ func (tcer *OtelTracer) Trace(
 	msg string,
 	fields ...field.Field,
 ) {
+	if level < tcer.level {
+		return
+	}
 
 	var ok bool
 	var span trace.Span

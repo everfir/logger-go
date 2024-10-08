@@ -1,12 +1,17 @@
 package log_config
 
 import (
+	"os"
+
 	"github.com/everfir/logger-go/structs/log_level"
 	"github.com/everfir/logger-go/structs/tracer_config"
 )
 
 // LogConfig 定义日志配置结构
 type LogConfig struct {
+	// 基础信息
+	ServiceName string // 服务名称
+
 	Level      log_level.Level // 日志级别：定义记录哪个级别及以上的日志
 	StackTrace log_level.Level // 堆栈跟踪级别：定义在哪个级别及以上的日志中包含堆栈跟踪
 
@@ -16,7 +21,8 @@ type LogConfig struct {
 
 	// 目录为当前工作目录
 	OutputFiles []string // 日志输出文件名：日志文件的保存位置，可以是文件路径或 "stdout"/"stderr"
-	ErrorFiles  []string // 错误日志文件名：错误级别日志的额外输出位置
+
+	ErrorFiles []string // 错误日志文件名：错误级别日志的额外输出位置
 
 	// 链路追踪
 	TracerConfig *tracer_config.TracerConfig
@@ -24,6 +30,7 @@ type LogConfig struct {
 
 // 默认配置
 var DefaultConfig = LogConfig{
+	ServiceName:  os.Getenv("ServiceName"),
 	Level:        log_level.InfoLevel,
 	StackTrace:   log_level.FatalLevel,
 	OutputFiles:  []string{"stdout"},

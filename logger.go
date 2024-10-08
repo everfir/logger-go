@@ -24,12 +24,19 @@ func init() {
 type myLogger struct {
 	logger.Logger
 	tracer.Tracer
+
+	// env
+	popIp   string
+	podName string
+	config  *log_config.LogConfig
 }
 
 var (
 	globalLogger = myLogger{
-		Logger: &logger.ConsoleLogger{},
-		Tracer: nil,
+		Logger:  &logger.ConsoleLogger{},
+		Tracer:  nil,
+		popIp:   os.Getenv("PodIP"),
+		podName: os.Getenv("PodName"),
 	}
 )
 
@@ -40,7 +47,7 @@ func Init(options ...Option) error {
 	for _, option := range options {
 		option(&config)
 	}
-	config.TracerConfig.FixDefault()
+	config.FixDefault()
 
 	return initWithConfig(&config)
 }
@@ -63,6 +70,7 @@ func initWithConfig(config *log_config.LogConfig) (err error) {
 		}
 	}()
 
+	// TODO 流程优化
 	var dir string
 	if dir, err = os.Getwd(); err != nil {
 		return fmt.Errorf("failed to get current working directory: %w", err)
@@ -78,7 +86,7 @@ func initWithConfig(config *log_config.LogConfig) (err error) {
 
 	var tcer tracer.Tracer = &tracer.NoTracer{}
 	if config.TracerConfig.EnableTracing() && config.TracerConfig.Validate() {
-		tcer = tracer.NewOtelTracer(config.TracerConfig)
+		tcer = tracer.NewOtelTracer(config.TracerConfig, config.Level)
 		if err = tcer.Init(); err != nil {
 			return err
 		}
@@ -86,13 +94,20 @@ func initWithConfig(config *log_config.LogConfig) (err error) {
 
 	globalLogger.Logger = loger
 	globalLogger.Tracer = tcer
+	globalLogger.config = config
 	return nil
 }
 
 // 提供全局日志函数
 func Debug(ctx context.Context, msg string, fields ...field.Field) {
+	// env fields
 	fields = append(fields, fixFields(ctx)...)
 	globalLogger.Tracer.Trace(ctx, log_level.DebugLevel, msg, fields...)
+
+	// tracing fields
+	if globalLogger.Tracer != nil {
+		fields = globalLogger.Tracer.FixFields(ctx, fields...)
+	}
 	globalLogger.Logger.Debug(msg, fields...)
 }
 
@@ -123,21 +138,12 @@ func Fatal(ctx context.Context, msg string, fields ...field.Field) {
 // TODO: 待根据环境方案更新
 func fixFields(ctx context.Context) (fields []field.Field) {
 	// 添加容器IP
-	fields = append(fields, field.String("container.ip", "container_ip_from_env"))
+	fields = append(fields, field.String("container.ip", globalLogger.popIp))
 	// 添加容器名
-	fields = append(fields, field.String("container.name", "container_name_from_env"))
-	// 添加ENV
-	fields = append(fields, field.String("env", "env_from_env"))
-	// 添加logger_version
-	fields = append(fields, field.String("logger.version", "logger_version_from_env"))
-	// 添加service_version
-	fields = append(fields, field.String("service.version", "service_version_from_env"))
-	// 添加service_name
-	fields = append(fields, field.String("service.name", "service_name_from_env"))
+	fields = append(fields, field.String("container.name", globalLogger.podName))
+	// 添加服务名
+	fields = append(fields, field.String("service.name", globalLogger.config.ServiceName))
 
-	if globalLogger.Tracer != nil {
-		fields = globalLogger.Tracer.FixFields(ctx, fields...)
-	}
 	return fields
 }
 

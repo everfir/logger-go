@@ -58,8 +58,18 @@ func WithErrorFiles(errorFiles ...string) Option {
 	}
 }
 
+func WithServiceName(name string) Option {
+	return func(c *log_config.LogConfig) {
+		c.ServiceName = name
+	}
+}
+
 // WithTracing 开启Tracing功能并设置OTEL Collector Endpoint
-func WithTracing(enable bool, endpoint string) Option {
+func WithTracing(
+	enable bool,
+	endpoint string,
+	compression tracer_config.Compression,
+) Option {
 	return func(c *log_config.LogConfig) {
 		if c.TracerConfig == nil {
 			c.TracerConfig = &tracer_config.TracerConfig{}
