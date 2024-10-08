@@ -61,6 +61,7 @@ func sendRequest(ctx context.Context) error {
 	// 注入 trace 信息到 header
 	logger.Inject(ctx, propagation.HeaderCarrier(req.Header))
 	req.Header.Set("Traceparent", "00-c1156a8801e4e6e9dd87c18071037df4-4ef6c87f0b8dc73f-01")
+	ctx = context.WithValue(ctx, "tracing", span)
 
 	// 记录发送的 header
 	logger.Info(ctx, "客户端发送的 header", field.String("headers", fmt.Sprintf("%v", req.Header)))

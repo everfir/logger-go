@@ -14,10 +14,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-var (
-	_funcTable []func(context.Context, string, ...field.Field)
-)
-
 func init() {
 	if err := Init(); err != nil {
 		Error(context.TODO(), fmt.Sprintf("[Logger] Init failed:%s. use console logger", err))
@@ -90,7 +86,6 @@ func initWithConfig(config *log_config.LogConfig) (err error) {
 
 	globalLogger.Logger = loger
 	globalLogger.Tracer = tcer
-
 	return nil
 }
 

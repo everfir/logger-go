@@ -124,8 +124,12 @@ func (tcer *OtelTracer) Trace(
 	fields ...field.Field,
 ) {
 
-	var span trace.Span = trace.SpanFromContext(ctx)
-	if !span.IsRecording() { // 需要在流程中保证span可用
+	var ok bool
+	var span trace.Span
+	if span, ok = ctx.Value("tracing").(trace.Span); !ok {
+		return
+	}
+	if span == nil || span.SpanContext().IsValid() == false {
 		return
 	}
 
