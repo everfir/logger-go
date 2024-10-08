@@ -110,24 +110,44 @@ func Debug(ctx context.Context, msg string, fields ...field.Field) {
 func Info(ctx context.Context, msg string, fields ...field.Field) {
 	fields = append(fields, fixFields(ctx)...)
 	globalLogger.Tracer.Trace(ctx, log_level.InfoLevel, msg, fields...)
+
+	// tracing fields
+	if globalLogger.Tracer != nil {
+		fields = globalLogger.Tracer.FixFields(ctx, fields...)
+	}
 	globalLogger.Logger.Info(msg, fields...)
 }
 
 func Warn(ctx context.Context, msg string, fields ...field.Field) {
 	fields = append(fields, fixFields(ctx)...)
 	globalLogger.Tracer.Trace(ctx, log_level.InfoLevel, msg, fields...)
+
+	// tracing fields
+	if globalLogger.Tracer != nil {
+		fields = globalLogger.Tracer.FixFields(ctx, fields...)
+	}
 	globalLogger.Logger.Warn(msg, fields...)
 }
 
 func Error(ctx context.Context, msg string, fields ...field.Field) {
 	fields = append(fields, fixFields(ctx)...)
 	globalLogger.Tracer.Trace(ctx, log_level.ErrorLevel, msg, fields...)
+
+	// tracing fields
+	if globalLogger.Tracer != nil {
+		fields = globalLogger.Tracer.FixFields(ctx, fields...)
+	}
 	globalLogger.Logger.Error(msg, fields...)
 }
 
 func Fatal(ctx context.Context, msg string, fields ...field.Field) {
 	fields = append(fields, fixFields(ctx)...)
 	globalLogger.Tracer.Trace(ctx, log_level.FatalLevel, msg, fields...)
+
+	// tracing fields
+	if globalLogger.Tracer != nil {
+		fields = globalLogger.Tracer.FixFields(ctx, fields...)
+	}
 	globalLogger.Logger.Fatal(msg, fields...)
 }
 
