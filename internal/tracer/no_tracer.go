@@ -12,9 +12,11 @@ import (
 type NoTracer struct {
 }
 
-func (tcer *NoTracer) Init() error                                                    { return nil }
-func (tcer *NoTracer) Close() error                                                   { return nil }
-func (tcer *NoTracer) FixFields(context.Context, ...field.Field) (ret []field.Field)  { return }
+func (tcer *NoTracer) Init() error  { return nil }
+func (tcer *NoTracer) Close() error { return nil }
+func (tcer *NoTracer) FixFields(ctx context.Context, fields ...field.Field) (ret []field.Field) {
+	return fields
+}
 func (tcer *NoTracer) Trace(context.Context, log_level.Level, string, ...field.Field) {}
 func (tcer *NoTracer) Start(ctx context.Context, name string) (context.Context, trace.Span) {
 	return ctx, nil

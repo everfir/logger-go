@@ -31,7 +31,7 @@ type myLogger struct {
 var (
 	globalLogger = myLogger{
 		Logger: &logger.ConsoleLogger{},
-		Tracer: nil,
+		Tracer: &tracer.NoTracer{},
 		config: &log_config.DefaultConfig,
 	}
 )
@@ -98,10 +98,10 @@ func initWithConfig(config *log_config.LogConfig) (err error) {
 func Debug(ctx context.Context, msg string, fields ...field.Field) {
 	// env fields
 	fields = append(fields, fixFields(ctx)...)
-	globalLogger.Tracer.Trace(ctx, log_level.DebugLevel, msg, fields...)
 
 	// tracing fields
 	if globalLogger.Tracer != nil {
+		globalLogger.Tracer.Trace(ctx, log_level.DebugLevel, msg, fields...)
 		fields = globalLogger.Tracer.FixFields(ctx, fields...)
 	}
 	globalLogger.Logger.Debug(msg, fields...)
@@ -109,10 +109,10 @@ func Debug(ctx context.Context, msg string, fields ...field.Field) {
 
 func Info(ctx context.Context, msg string, fields ...field.Field) {
 	fields = append(fields, fixFields(ctx)...)
-	globalLogger.Tracer.Trace(ctx, log_level.InfoLevel, msg, fields...)
 
 	// tracing fields
 	if globalLogger.Tracer != nil {
+		globalLogger.Tracer.Trace(ctx, log_level.InfoLevel, msg, fields...)
 		fields = globalLogger.Tracer.FixFields(ctx, fields...)
 	}
 	globalLogger.Logger.Info(msg, fields...)
@@ -120,10 +120,8 @@ func Info(ctx context.Context, msg string, fields ...field.Field) {
 
 func Warn(ctx context.Context, msg string, fields ...field.Field) {
 	fields = append(fields, fixFields(ctx)...)
-	globalLogger.Tracer.Trace(ctx, log_level.InfoLevel, msg, fields...)
-
-	// tracing fields
 	if globalLogger.Tracer != nil {
+		globalLogger.Tracer.Trace(ctx, log_level.InfoLevel, msg, fields...)
 		fields = globalLogger.Tracer.FixFields(ctx, fields...)
 	}
 	globalLogger.Logger.Warn(msg, fields...)
@@ -131,10 +129,9 @@ func Warn(ctx context.Context, msg string, fields ...field.Field) {
 
 func Error(ctx context.Context, msg string, fields ...field.Field) {
 	fields = append(fields, fixFields(ctx)...)
-	globalLogger.Tracer.Trace(ctx, log_level.ErrorLevel, msg, fields...)
-
 	// tracing fields
 	if globalLogger.Tracer != nil {
+		globalLogger.Tracer.Trace(ctx, log_level.ErrorLevel, msg, fields...)
 		fields = globalLogger.Tracer.FixFields(ctx, fields...)
 	}
 	globalLogger.Logger.Error(msg, fields...)
@@ -142,10 +139,10 @@ func Error(ctx context.Context, msg string, fields ...field.Field) {
 
 func Fatal(ctx context.Context, msg string, fields ...field.Field) {
 	fields = append(fields, fixFields(ctx)...)
-	globalLogger.Tracer.Trace(ctx, log_level.FatalLevel, msg, fields...)
 
 	// tracing fields
 	if globalLogger.Tracer != nil {
+		globalLogger.Tracer.Trace(ctx, log_level.FatalLevel, msg, fields...)
 		fields = globalLogger.Tracer.FixFields(ctx, fields...)
 	}
 	globalLogger.Logger.Fatal(msg, fields...)
@@ -156,7 +153,7 @@ func fixFields(ctx context.Context) (fields []field.Field) {
 	// 添加容器IP
 	fields = append(fields, field.String("container.ip", globalLogger.config.PodIP))
 	// 添加服务名
-	fields = append(fields, field.String("service.name", globalLogger.config.ServiceName))
+	fields = append(fields, field.String("ServiceName", globalLogger.config.ServiceName))
 
 	return fields
 }
