@@ -72,10 +72,20 @@ func WithTracing(
 ) Option {
 	return func(c *log_config.LogConfig) {
 		if c.TracerConfig == nil {
-			c.TracerConfig = &tracer_config.TracerConfig{}
+			c.TracerConfig = &tracer_config.DefaultTracerConfig
 		}
 
 		c.TracerConfig.Enable = enable
 		c.TracerConfig.CollectorEndpoint = endpoint
+	}
+}
+
+func WithContextHandler(key string, handler tracer_config.ContextHandler) Option {
+	return func(c *log_config.LogConfig) {
+		if c.TracerConfig == nil {
+			c.TracerConfig = &tracer_config.DefaultTracerConfig
+		}
+
+		c.TracerConfig.ContextHandlers[key] = handler
 	}
 }

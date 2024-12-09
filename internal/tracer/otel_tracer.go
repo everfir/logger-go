@@ -100,13 +100,16 @@ func (tcer *OtelTracer) Close() (err error) {
 }
 
 func (tcer *OtelTracer) FixFields(ctx context.Context, fields ...field.Field) []field.Field {
+	for key, handler := range tcer.config.ContextHandlers {
+		fields = append(fields, field.String(key, handler(ctx)))
+	}
 
 	var ok bool
 	var span trace.Span
 	if span, ok = ctx.Value("tracing").(trace.Span); !ok {
 		return fields
 	}
-	if span == nil || span.SpanContext().IsValid() == false {
+	if span == nil || !span.SpanContext().IsValid() {
 		return fields
 	}
 
@@ -116,6 +119,7 @@ func (tcer *OtelTracer) FixFields(ctx context.Context, fields ...field.Field) []
 		field.String("trace_id", traceID),
 		field.String("span_id", spanID),
 	)
+
 	return fields
 }
 

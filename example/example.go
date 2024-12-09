@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"time"
 
 	"github.com/everfir/logger-go"
 	"github.com/everfir/logger-go/structs/field"
+	"github.com/everfir/logger-go/structs/log_level"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -85,16 +87,21 @@ func sendRequest(ctx context.Context) error {
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	// 初始化日志库
-	// var err error
-	// err = logger.Init(
-	// 	logger.WithLevel(log_level.DebugLevel),
-	// 	logger.WithServiceName("logger-example"),
-	// )
-	// if err != nil {
-	// 	panic(fmt.Sprintf("初始化日志库失败: %v", err))
-	// }
-	// defer logger.Close()
+	var err error
+	err = logger.Init(
+		logger.WithLevel(log_level.DebugLevel),
+		logger.WithServiceName("logger-example"),
+		logger.WithContextHandler("test_handler", func(ctx context.Context) string {
+			return "test" + fmt.Sprintf("%d", time.Now().Unix())
+		}),
+	)
+	if err != nil {
+		panic(fmt.Sprintf("初始化日志库失败: %v", err))
+	}
+	defer logger.Close()
 
 	// 创建一个根 span
 	ctx, rootSpan := tcer.Start(context.Background(), "main")

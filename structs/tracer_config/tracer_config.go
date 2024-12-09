@@ -11,6 +11,7 @@ var DefaultTracerConfig = TracerConfig{
 	Compression:       No,
 	ServiceName:       os.Getenv("SERVICE_NAME"),
 	CollectorEndpoint: os.Getenv("OTEL_COLLECTOR_DNS"),
+	ContextHandlers:   make(map[string]ContextHandler),
 }
 
 type TracerConfig struct {
@@ -20,6 +21,8 @@ type TracerConfig struct {
 	Level             log_level.Level
 	Compression       Compression
 	CollectorEndpoint string // CollectorEndpoint
+
+	ContextHandlers map[string]ContextHandler
 }
 
 func (config *TracerConfig) FixDefault() {
