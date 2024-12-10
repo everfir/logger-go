@@ -12,6 +12,7 @@ import (
 	"github.com/everfir/logger-go/structs/field"
 	"github.com/everfir/logger-go/structs/log_level"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -33,8 +34,11 @@ func tracingMiddleware() gin.HandlerFunc {
 		ctx, span := logger.Start(ctx, "tracingMiddleware")
 		defer span.End()
 
+		bag := baggage.FromContext(ctx)
+		logger.Info(ctx, "baggage", field.Any("baggage", bag))
+
 		c.Request = c.Request.WithContext(ctx)
-		c.Set("tracing", span)
+		c.Request = c.Request.WithContext(baggage.ContextWithBaggage(ctx, bag))
 
 		c.Next()
 	}
@@ -42,7 +46,7 @@ func tracingMiddleware() gin.HandlerFunc {
 
 // 服务器处理函数
 func serverHandler(c *gin.Context) {
-	logger.Info(c, "服务端测试", field.String("my_trace_id", logger.TraceID(c)))
+	logger.Info(c, "服务端测试")
 
 	// 响应客户端
 	c.String(http.StatusOK, "Hello from server!")
@@ -61,10 +65,10 @@ func sendRequest(ctx context.Context) error {
 	}
 
 	// 注入 trace 信息到 header
-	logger.Inject(ctx, propagation.HeaderCarrier(req.Header))
+	logger.Inject(ctx, propagation.HeaderCarrier(req.Header), map[string]string{"my_test": "test", "my_test2": "test2"})
 
 	// 记录发送的 header
-	logger.Info(ctx, "客户端发送的 header", field.String("headers", fmt.Sprintf("%v", req.Header)), field.String("my_trace_id", logger.TraceID(ctx)))
+	logger.Info(ctx, "客户端发送的 header", field.String("headers", fmt.Sprintf("%v", req.Header)))
 
 	// 发送请求
 	client := &http.Client{}

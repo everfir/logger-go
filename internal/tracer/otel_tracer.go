@@ -10,6 +10,7 @@ import (
 	"github.com/everfir/logger-go/structs/tracer_config"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -105,11 +106,14 @@ func (tcer *OtelTracer) FixFields(ctx context.Context, fields ...field.Field) []
 		fields = append(fields, field.String(key, handler(ctx)))
 	}
 
-	var ok bool
-	var span trace.Span
-	if span, ok = ctx.Value("tracing").(trace.Span); !ok {
-		return fields
+	bag := baggage.FromContext(ctx)
+	for _, member := range bag.Members() {
+		fields = append(fields, field.String(member.Key(), member.Value()))
 	}
+
+	// var ok bool
+	var span trace.Span
+	span = trace.SpanFromContext(ctx)
 	if span == nil || !span.SpanContext().IsValid() {
 		return fields
 	}

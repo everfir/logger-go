@@ -10,6 +10,7 @@ import (
 	"github.com/everfir/logger-go/structs/field"
 	"github.com/everfir/logger-go/structs/log_config"
 	"github.com/everfir/logger-go/structs/log_level"
+	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -169,10 +170,28 @@ func Extract(ctx context.Context, carrier propagation.TextMapCarrier) context.Co
 }
 
 // Inject 将trace信息注入到上下文中
-func Inject(ctx context.Context, carrier propagation.TextMapCarrier) {
+func Inject(ctx context.Context, carrier propagation.TextMapCarrier, extra map[string]string) {
 	if globalLogger.Tracer == nil {
 		return
 	}
+
+	var err error
+	var members []baggage.Member
+	for k, v := range extra {
+		member, err := baggage.NewMember(k, v)
+		if err != nil {
+			Warn(ctx, "create baggage member failed", field.Any("error", err))
+			continue
+		}
+		members = append(members, member)
+	}
+
+	bag, err := baggage.New(members...)
+	if err != nil {
+		Warn(ctx, "create baggage failed", field.Any("error", err))
+	}
+	ctx = baggage.ContextWithBaggage(ctx, bag)
+
 	globalLogger.Tracer.Inject(ctx, carrier)
 }
 
@@ -182,21 +201,6 @@ func Start(ctx context.Context, name string) (context.Context, trace.Span) {
 		return ctx, nil
 	}
 
-	return globalLogger.Tracer.Start(ctx, name)
-}
-
-func TraceID(ctx context.Context) string {
-	if globalLogger.Tracer == nil {
-		return ""
-	}
-
-	var ok bool
-	var span trace.Span
-	if span, ok = ctx.Value("tracing").(trace.Span); !ok {
-		return ""
-	}
-	if span == nil || !span.SpanContext().IsValid() {
-		return ""
-	}
-	return span.SpanContext().TraceID().String()
+	ctx, span := globalLogger.Tracer.Start(ctx, name)
+	return ctx, span
 }
