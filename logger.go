@@ -181,5 +181,22 @@ func Start(ctx context.Context, name string) (context.Context, trace.Span) {
 	if globalLogger.Tracer == nil {
 		return ctx, nil
 	}
+
 	return globalLogger.Tracer.Start(ctx, name)
+}
+
+func TraceID(ctx context.Context) string {
+	if globalLogger.Tracer == nil {
+		return ""
+	}
+
+	var ok bool
+	var span trace.Span
+	if span, ok = ctx.Value("tracing").(trace.Span); !ok {
+		return ""
+	}
+	if span == nil || !span.SpanContext().IsValid() {
+		return ""
+	}
+	return span.SpanContext().TraceID().String()
 }

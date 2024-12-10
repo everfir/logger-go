@@ -77,6 +77,7 @@ func (tcer *OtelTracer) Init() (err error) {
 	otel.SetTextMapPropagator(propagator)
 	tcer.provider = tp
 	tcer.propagator = otel.GetTextMapPropagator()
+
 	return
 }
 

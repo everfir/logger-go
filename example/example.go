@@ -12,7 +12,6 @@ import (
 	"github.com/everfir/logger-go/structs/field"
 	"github.com/everfir/logger-go/structs/log_level"
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -24,15 +23,17 @@ var propagator propagation.TextMapPropagator
 // 初始化函数
 func init() {
 	// 初始化 tracer
-	tcer = otel.Tracer("example")
+	// tcer = logger.Tracer("example")
 }
 
 // tracingMiddleware 注入 tracing 信息到 gin.Context
 func tracingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := logger.Extract(c.Request.Context(), propagation.HeaderCarrier(c.Request.Header))
-		ctx, span := tcer.Start(ctx, "tracingMiddleware")
+		ctx, span := logger.Start(ctx, "tracingMiddleware")
 		defer span.End()
+
+		c.Request = c.Request.WithContext(ctx)
 		c.Set("tracing", span)
 
 		c.Next()
@@ -41,7 +42,7 @@ func tracingMiddleware() gin.HandlerFunc {
 
 // 服务器处理函数
 func serverHandler(c *gin.Context) {
-	logger.Info(c, "服务端测试")
+	logger.Info(c, "服务端测试", field.String("my_trace_id", logger.TraceID(c)))
 
 	// 响应客户端
 	c.String(http.StatusOK, "Hello from server!")
@@ -50,8 +51,8 @@ func serverHandler(c *gin.Context) {
 // 客户端发送请求函数
 func sendRequest(ctx context.Context) error {
 	// 创建新的 span
-	ctx, span := tcer.Start(ctx, "client-request")
-	defer span.End()
+	// ctx, span := tcer.Start(ctx, "client-request")
+	// defer span.End()
 
 	// 创建 HTTP 请求
 	req, err := http.NewRequestWithContext(ctx, "GET", "http://localhost:10083", nil)
@@ -61,11 +62,9 @@ func sendRequest(ctx context.Context) error {
 
 	// 注入 trace 信息到 header
 	logger.Inject(ctx, propagation.HeaderCarrier(req.Header))
-	req.Header.Set("Traceparent", "00-c1156a8801e4e6e9dd87c18071037df4-4ef6c87f0b8dc73f-01")
-	ctx = context.WithValue(ctx, "tracing", span)
 
 	// 记录发送的 header
-	logger.Info(ctx, "客户端发送的 header", field.String("headers", fmt.Sprintf("%v", req.Header)))
+	logger.Info(ctx, "客户端发送的 header", field.String("headers", fmt.Sprintf("%v", req.Header)), field.String("my_trace_id", logger.TraceID(ctx)))
 
 	// 发送请求
 	client := &http.Client{}
@@ -104,8 +103,9 @@ func main() {
 	defer logger.Close()
 
 	// 创建一个根 span
-	ctx, rootSpan := tcer.Start(context.Background(), "main")
+	ctx, rootSpan := logger.Start(context.Background(), "main")
 	defer rootSpan.End()
+	ctx = context.WithValue(ctx, "tracing", rootSpan)
 
 	// 创建 Gin 引擎
 	r := gin.Default()
