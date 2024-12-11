@@ -106,14 +106,20 @@ func (tcer *OtelTracer) FixFields(ctx context.Context, fields ...field.Field) []
 		fields = append(fields, field.String(key, handler(ctx)))
 	}
 
-	bag := baggage.FromContext(ctx)
+	bag, ok := ctx.Value("baggage").(baggage.Baggage)
+	if !ok {
+		bag = baggage.FromContext(ctx)
+	}
 	for _, member := range bag.Members() {
 		fields = append(fields, field.String(member.Key(), member.Value()))
 	}
 
 	// var ok bool
 	var span trace.Span
-	span = trace.SpanFromContext(ctx)
+	span, ok = ctx.Value("span").(trace.Span)
+	if !ok {
+		span = trace.SpanFromContext(ctx)
+	}
 	if span == nil || !span.SpanContext().IsValid() {
 		return fields
 	}
@@ -201,11 +207,26 @@ func toOtelField(f field.Field) attribute.KeyValue {
 }
 
 func (tcer *OtelTracer) Extract(ctx context.Context, carrier propagation.TextMapCarrier) context.Context {
-	return tcer.propagator.Extract(ctx, carrier)
+	nCtx := tcer.propagator.Extract(ctx, carrier)
+
+	nCtx = context.WithValue(nCtx, "span", trace.SpanFromContext(nCtx))
+	nCtx = context.WithValue(nCtx, "baggage", baggage.FromContext(nCtx))
+	return nCtx
 }
 
 func (tcer *OtelTracer) Inject(ctx context.Context, carrier propagation.TextMapCarrier) {
-	tcer.propagator.Inject(ctx, carrier)
+	var nCtx context.Context = ctx
+	span, ok := ctx.Value("span").(trace.Span)
+	if ok {
+		nCtx = trace.ContextWithSpan(nCtx, span)
+	}
+
+	bag, ok := ctx.Value("baggage").(baggage.Baggage)
+	if ok {
+		nCtx = baggage.ContextWithBaggage(nCtx, bag)
+	}
+
+	tcer.propagator.Inject(nCtx, carrier)
 }
 
 func (tcer *OtelTracer) Start(ctx context.Context, name string) (context.Context, trace.Span) {

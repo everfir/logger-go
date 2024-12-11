@@ -31,15 +31,13 @@ func init() {
 func tracingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := logger.Extract(c.Request.Context(), propagation.HeaderCarrier(c.Request.Header))
+
 		ctx, span := logger.Start(ctx, "tracingMiddleware")
 		defer span.End()
 
-		bag := baggage.FromContext(ctx)
-		logger.Info(ctx, "baggage", field.Any("baggage", bag))
-
 		c.Request = c.Request.WithContext(ctx)
-		c.Request = c.Request.WithContext(baggage.ContextWithBaggage(ctx, bag))
-
+		c.Set("span", span)
+		c.Set("baggage", baggage.FromContext(ctx))
 		c.Next()
 	}
 }
@@ -48,16 +46,17 @@ func tracingMiddleware() gin.HandlerFunc {
 func serverHandler(c *gin.Context) {
 	logger.Info(c, "服务端测试")
 
+	req, _ := http.NewRequest("GET", "http://localhost:10083", nil)
+	logger.Inject(c, propagation.HeaderCarrier(req.Header), nil)
+
+	logger.Error(c, "服务端测试发送请求", field.String("headers", fmt.Sprintf("%v", req.Header)))
+
 	// 响应客户端
 	c.String(http.StatusOK, "Hello from server!")
 }
 
 // 客户端发送请求函数
 func sendRequest(ctx context.Context) error {
-	// 创建新的 span
-	// ctx, span := tcer.Start(ctx, "client-request")
-	// defer span.End()
-
 	// 创建 HTTP 请求
 	req, err := http.NewRequestWithContext(ctx, "GET", "http://localhost:10083", nil)
 	if err != nil {
@@ -65,7 +64,7 @@ func sendRequest(ctx context.Context) error {
 	}
 
 	// 注入 trace 信息到 header
-	logger.Inject(ctx, propagation.HeaderCarrier(req.Header), map[string]string{"my_test": "test", "my_test2": "test2"})
+	logger.Inject(ctx, propagation.HeaderCarrier(req.Header), map[string]string{"openid": "_openid"})
 
 	// 记录发送的 header
 	logger.Info(ctx, "客户端发送的 header", field.String("headers", fmt.Sprintf("%v", req.Header)))
@@ -109,7 +108,6 @@ func main() {
 	// 创建一个根 span
 	ctx, rootSpan := logger.Start(context.Background(), "main")
 	defer rootSpan.End()
-	ctx = context.WithValue(ctx, "tracing", rootSpan)
 
 	// 创建 Gin 引擎
 	r := gin.Default()
