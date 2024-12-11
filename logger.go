@@ -175,8 +175,11 @@ func Inject(ctx context.Context, carrier propagation.TextMapCarrier, extra map[s
 		return
 	}
 
-	bag := baggage.FromContext(ctx)
-	var members []baggage.Member = bag.Members()
+	var members []baggage.Member
+	bag, ok := ctx.Value("baggage").(baggage.Baggage)
+	if ok {
+		members = bag.Members()
+	}
 
 	var err error
 	for k, v := range extra {
@@ -192,7 +195,7 @@ func Inject(ctx context.Context, carrier propagation.TextMapCarrier, extra map[s
 	if err != nil {
 		Warn(ctx, "create baggage failed", field.Any("error", err))
 	}
-	ctx = baggage.ContextWithBaggage(ctx, bag)
+	ctx = context.WithValue(ctx, "baggage", bag)
 
 	globalLogger.Tracer.Inject(ctx, carrier)
 }

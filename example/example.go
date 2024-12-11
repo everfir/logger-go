@@ -35,6 +35,9 @@ func tracingMiddleware() gin.HandlerFunc {
 		ctx, span := logger.Start(ctx, "tracingMiddleware")
 		defer span.End()
 
+		ctx = context.WithValue(ctx, "span", span)
+		ctx = context.WithValue(ctx, "baggage", baggage.FromContext(ctx))
+
 		c.Request = c.Request.WithContext(ctx)
 		c.Set("span", span)
 		c.Set("baggage", baggage.FromContext(ctx))
@@ -45,11 +48,15 @@ func tracingMiddleware() gin.HandlerFunc {
 // 服务器处理函数
 func serverHandler(c *gin.Context) {
 	logger.Info(c, "服务端测试")
+	logger.Info(c.Request.Context(), "服务端测试")
 
 	req, _ := http.NewRequest("GET", "http://localhost:10083", nil)
 	logger.Inject(c, propagation.HeaderCarrier(req.Header), nil)
+	logger.Error(c.Request.Context(), "服务端测试发送请求", field.String("headers", fmt.Sprintf("%v", req.Header)))
 
-	logger.Error(c, "服务端测试发送请求", field.String("headers", fmt.Sprintf("%v", req.Header)))
+	m := map[string]string{}
+	logger.Inject(c, propagation.MapCarrier(m), map[string]string{"new_openid": "new_openid"})
+	logger.Error(c.Request.Context(), "服务端测试发送请求", field.Any("map", m))
 
 	// 响应客户端
 	c.String(http.StatusOK, "Hello from server!")
@@ -96,9 +103,6 @@ func main() {
 	err = logger.Init(
 		logger.WithLevel(log_level.DebugLevel),
 		logger.WithServiceName("logger-example"),
-		logger.WithContextHandler("test_handler", func(ctx context.Context) string {
-			return "test" + fmt.Sprintf("%d", time.Now().Unix())
-		}),
 	)
 	if err != nil {
 		panic(fmt.Sprintf("初始化日志库失败: %v", err))
@@ -106,8 +110,9 @@ func main() {
 	defer logger.Close()
 
 	// 创建一个根 span
-	ctx, rootSpan := logger.Start(context.Background(), "main")
-	defer rootSpan.End()
+	ctx := context.TODO()
+	// ctx, rootSpan := logger.Start(context.Background(), "main")
+	// defer rootSpan.End()
 
 	// 创建 Gin 引擎
 	r := gin.Default()
