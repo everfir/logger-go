@@ -42,5 +42,8 @@ var DefaultConfig = LogConfig{
 }
 
 func (config *LogConfig) FixDefault() {
+	if config.RotationTime == 0 {
+		config.RotationTime = 1
+	}
 	config.TracerConfig.FixDefault()
 }

@@ -103,6 +103,7 @@ func main() {
 	err = logger.Init(
 		logger.WithLevel(log_level.DebugLevel),
 		logger.WithServiceName("logger-example"),
+		logger.WithOutputFiles("stdout", "app.log"),
 	)
 	if err != nil {
 		panic(fmt.Sprintf("初始化日志库失败: %v", err))

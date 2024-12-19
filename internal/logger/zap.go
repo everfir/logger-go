@@ -149,12 +149,12 @@ func getRotateLogger(filename string, config *log_config.LogConfig) (logger io.W
 	}
 
 	filename = path.Join(dir+"/log", filename)
-	suffix := ".%Y%m%d%H%M"
+	suffix := ".%Y%m%d%H"
 	logger, err = rotatelogs.New(
 		filename+suffix,
 		rotatelogs.WithLinkName(filename),
 		// rotatelogs.WithMaxAge(time.Duration(config.MaxAge)*24*time.Hour),
-		rotatelogs.WithRotationTime(time.Duration(config.RotationTime)*time.Minute),
+		rotatelogs.WithRotationTime(time.Duration(config.RotationTime)*time.Hour),
 		rotatelogs.WithRotationCount(uint(config.MaxBackups)),
 		rotatelogs.WithHandler(rotatelogs.HandlerFunc(func(e rotatelogs.Event) {
 			if e.Type() != rotatelogs.FileRotatedEventType {
